@@ -11,8 +11,9 @@ def send_mail(df_data: pd.DataFrame, debug=True, send_debug=False, max_debug_cou
     mail_id = os.getenv('MAIL_ID')
     mail_password = os.getenv('MAIL_APP_PASSWORD')
 
-    assert isinstance(mail_id, str)
-    assert isinstance(mail_password, str)
+    assert isinstance(mail_id, str), "Verifique se o arquivo .env existe e está configurado corretamente. Para instruções siga o readme.md do projeto https://github.com/glucard/dcc-mail-sender"
+    assert isinstance(mail_password, str), "Verifique se o arquivo .env existe e está configurado corretamente. Para instruções siga o readme.md do projeto https://github.com/glucard/dcc-mail-sender"
+
     assert isinstance(df_data, pd.DataFrame)
     assert isinstance(debug, bool)
     assert isinstance(send_debug, bool)
@@ -21,7 +22,7 @@ def send_mail(df_data: pd.DataFrame, debug=True, send_debug=False, max_debug_cou
     if send_debug:
         debug_send_count=0
         debug_mail = os.getenv('DEBUG_MAIL')
-        assert isinstance(debug_mail, str)
+        assert isinstance(debug_mail, str), "Verifique se o arquivo .env existe e está configurado corretamente. Para instruções siga o readme.md do projeto https://github.com/glucard/dcc-mail-sender"
 
     # creates SMTP session
     with smtplib.SMTP('smtp.gmail.com', 587) as s:
@@ -42,7 +43,7 @@ def send_mail(df_data: pd.DataFrame, debug=True, send_debug=False, max_debug_cou
                 if debug:
                     print(row['nome'], row['email'])
                     if send_debug and debug_send_count < max_debug_count_send:
-                        s.sendmail(from_addr=mail_id, to_addrs=debug_mail)
+                        s.sendmail(from_addr=mail_id, to_addrs=debug_mail, msg=message)
                         debug_send_count += 1
                     
                 else:
