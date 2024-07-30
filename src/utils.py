@@ -107,3 +107,14 @@ def get_df_data(file_path: str, module_name: str):
         df_data['attachments_paths'] = ""
 
     return df_data
+
+def add_attachments(df_data: pd.DataFrame, attachments_folder_path:str):
+    
+    assert isinstance(df_data, pd.DataFrame), "df_data deve ser um objeto DataFrame de pandas."
+    assert isinstance(attachments_folder_path, str), "attachments_folder_path deve ser uma string"
+    assert os.path.isdir(attachments_folder_path), f"'{attachments_folder_path}' é um caminho invalido."
+
+    
+
+
+# codigo dedicado a minha namorada linda e bonita <3
