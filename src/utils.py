@@ -1,12 +1,18 @@
 import pandas as pd
 import smtplib
 
+from email.message import EmailMessage
+from email.mime.base import MIMEBase
+from email.mime.multipart import MIMEMultipart
+from email.mime.application import MIMEApplication
+from email import encoders
+
 # load env
 import os
 from dotenv import load_dotenv
 load_dotenv()
 
-def send_mail(df_data: pd.DataFrame, debug=True, send_debug=False, max_debug_count_send:int=1):
+def send_mail(df_data: pd.DataFrame, module_name:str, debug=True, send_debug=False, max_debug_count_send:int=1):
 
     mail_id = os.getenv('MAIL_ID')
     mail_password = os.getenv('MAIL_APP_PASSWORD')
@@ -14,6 +20,7 @@ def send_mail(df_data: pd.DataFrame, debug=True, send_debug=False, max_debug_cou
     assert isinstance(mail_id, str), "Verifique se o arquivo .env existe e está configurado corretamente. Para instruções siga o readme.md do projeto https://github.com/glucard/dcc-mail-sender"
     assert isinstance(mail_password, str), "Verifique se o arquivo .env existe e está configurado corretamente. Para instruções siga o readme.md do projeto https://github.com/glucard/dcc-mail-sender"
 
+    assert isinstance(module_name, str)
     assert isinstance(df_data, pd.DataFrame)
     assert isinstance(debug, bool)
     assert isinstance(send_debug, bool)
@@ -33,17 +40,38 @@ def send_mail(df_data: pd.DataFrame, debug=True, send_debug=False, max_debug_cou
         
         for index, row in df_data.iterrows():
             try:
-                # message to be sent
-                message = f"""\
-                    Debugging {row['nome']}\ntest\n\ntest
+                # Create the email message
+                msg = MIMEMultipart()
+                msg['From'] = mail_id
+                msg['To'] = debug_mail
+                msg['Subject'] = "subject"
 
-                    att
-                    """
-                # sending the mail
+                body = f"""\
+                Seus certificados {row['nome']}:
+                """
+
+                attachments_paths = row['attachments_paths']
+
+                # Attach the body of the email
+                msg.attach(MIMEApplication(body, 'plain'))
+
+                for attachment_path in attachments_paths.split('|'):
+                    # Open the PDF file in binary mode
+                    with open(attachment_path, 'rb') as attachment:
+                        # Create a MIMEBase object
+                        part = MIMEBase('application', 'octet-stream')
+                        part.set_payload(attachment.read())
+                        encoders.encode_base64(part)
+                        part.add_header('Content-Disposition', f'attachment; filename={attachment_path}')
+
+                        # Attach the MIMEBase object to the email message
+                        msg.attach(part)
+
                 if debug:
                     print(row['nome'], row['email'])
                     if send_debug and debug_send_count < max_debug_count_send:
-                        s.sendmail(from_addr=mail_id, to_addrs=debug_mail, msg=message)
+                        s.sendmail(from_addr=mail_id, to_addrs=debug_mail, msg=msg.as_string())
+                        df_data.iloc[index][module_name] = True
                         debug_send_count += 1
                     
                 else:
@@ -76,5 +104,6 @@ def get_df_data(file_path: str, module_name: str):
 
     if not module_name in df_columns:
         df_data[module_name] = False
+        df_data['attachments_paths'] = ""
 
     return df_data

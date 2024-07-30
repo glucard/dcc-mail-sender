@@ -9,4 +9,4 @@
 
 `.env` deve parecer com:
 
-![alt text](media/dot_env_example.png)
+![dot_env_example](media/dot_env_example.png)
