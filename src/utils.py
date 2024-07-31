@@ -3,6 +3,7 @@ import smtplib
 
 from email.message import EmailMessage
 from email.mime.base import MIMEBase
+from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.application import MIMEApplication
 from email import encoders
@@ -40,44 +41,41 @@ def send_mail(df_data: pd.DataFrame, module_name:str, debug=True, send_debug=Fal
         
         for index, row in df_data.iterrows():
             try:
+                if row['attachments_paths'] == "":
+                    print(f"Ignorando {row['nome']}. Não possui arquivos a serem enviados.")
+                    continue
+
                 # Create the email message
                 msg = MIMEMultipart()
                 msg['From'] = mail_id
                 msg['To'] = debug_mail
                 msg['Subject'] = "subject"
 
-                body = f"""\
-                Seus certificados {row['nome']}:
-                """
+                body = f"Seus certificados {row['nome']}:"
 
                 attachments_paths = row['attachments_paths']
 
                 # Attach the body of the email
-                msg.attach(MIMEApplication(body, 'plain'))
+                msg.attach(MIMEText(body, 'plain'))
 
                 for attachment_path in attachments_paths.split('|'):
                     # Open the PDF file in binary mode
                     with open(attachment_path, 'rb') as attachment:
-                        # Create a MIMEBase object
-                        part = MIMEBase('application', 'octet-stream')
-                        part.set_payload(attachment.read())
-                        encoders.encode_base64(part)
-                        part.add_header('Content-Disposition', f'attachment; filename={attachment_path}')
-
-                        # Attach the MIMEBase object to the email message
+                        # Create a MIMEBase object# Create a MIMEApplication object
+                        part = MIMEApplication(attachment.read(), Name=os.path.basename(attachment_path))
+                        part['Content-Disposition'] = f'attachment; filename="{os.path.basename(attachment_path)}"'
+                        # Attach the MIMEApplication object to the email message
                         msg.attach(part)
-
                 if debug:
-                    print(row['nome'], row['email'])
                     if send_debug and debug_send_count < max_debug_count_send:
                         s.sendmail(from_addr=mail_id, to_addrs=debug_mail, msg=msg.as_string())
-                        df_data.iloc[index][module_name] = True
                         debug_send_count += 1
-                    
                 else:
-                    pass
+                    s.sendmail(from_addr=mail_id, to_addrs=row['email'], msg=msg.as_string())
+                df_data.loc[index, module_name] = True
+                print(f"Enviado com sucesso a {row['nome']} {row['email']}")
             except Exception as e:
-                print(e)
+                print(f"erro ao enviar para {row['nome']}.", e)
 
 def get_df_data(file_path: str, module_name: str):
 
@@ -104,7 +102,9 @@ def get_df_data(file_path: str, module_name: str):
 
     if not module_name in df_columns:
         df_data[module_name] = False
-        df_data['attachments_paths'] = ""
+
+    if not 'attachments_paths' in df_columns:
+        df_data['attachments_paths'] = r""
 
     return df_data
 
@@ -114,7 +114,14 @@ def add_attachments(df_data: pd.DataFrame, attachments_folder_path:str):
     assert isinstance(attachments_folder_path, str), "attachments_folder_path deve ser uma string"
     assert os.path.isdir(attachments_folder_path), f"'{attachments_folder_path}' é um caminho invalido."
 
-    
+    file_names = os.listdir(attachments_folder_path)
 
+    for fn in file_names:
+        fn_extracted_name = fn.lower()[:-11]
+        p_file_index = df_data[df_data["nome"].apply(lambda x: x.lower()) == fn_extracted_name].index[0]
+        # assert isinstance(p_file_index, int), "p_file_indexd deve ser um int."
+        df_data.loc[p_file_index, 'attachments_paths'] += "|" if df_data.loc[p_file_index, 'attachments_paths'] != "" else ""
+        df_data.loc[p_file_index, 'attachments_paths'] +=  os.path.join(attachments_folder_path, fn)
+        #print(fn_extracted_name, p_file_index)
 
 # codigo dedicado a minha namorada linda e bonita <3
