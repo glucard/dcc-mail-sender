@@ -13,7 +13,22 @@ import os
 from dotenv import load_dotenv
 load_dotenv()
 
-def send_mail(df_data: pd.DataFrame, module_name:str, debug=True, send_debug=False, max_debug_count_send:int=1):
+def custom_message(message:str, tags_replaces:dict):
+    """
+    message: string com messagem contendo tags. Examplo de tag: <name>
+    tags_replaces: dicionario com keys como tags e valores como valores que irão substituir as tags. Examplo {"<name>": "Lucas"}
+    assert isinstance(message, str)
+    """
+    assert isinstance(message, str), "Mensagem deve ser uma string."
+    assert isinstance(tags_replaces, dict), "tags_replaces deve ser um dicionario."
+
+    for tag, value in tags_replaces.items():
+        message = message.replace(tag, value)
+
+    return message
+    
+
+def send_mail(df_data: pd.DataFrame, module_name:str, message: str, subject:str, debug=True, send_debug=False, max_debug_count_send:int=1):
 
     mail_id = os.getenv('MAIL_ID')
     mail_password = os.getenv('MAIL_APP_PASSWORD')
@@ -27,6 +42,9 @@ def send_mail(df_data: pd.DataFrame, module_name:str, debug=True, send_debug=Fal
     assert isinstance(send_debug, bool)
     assert isinstance(max_debug_count_send, int)
 
+    assert isinstance(message, str)
+    assert isinstance(subject, str)
+
     if send_debug:
         debug_send_count=0
         debug_mail = os.getenv('DEBUG_MAIL')
@@ -38,9 +56,10 @@ def send_mail(df_data: pd.DataFrame, module_name:str, debug=True, send_debug=Fal
         s.starttls()
         # Authentication
         s.login(mail_id, mail_password)
-        
+        print("Enviando emails...")
         for index, row in df_data.iterrows():
             try:
+                print(f"Enviando a {row['nome']}...", end=" ")
                 if row['attachments_paths'] == "":
                     print(f"Ignorando {row['nome']}. Não possui arquivos a serem enviados.")
                     continue
@@ -49,9 +68,11 @@ def send_mail(df_data: pd.DataFrame, module_name:str, debug=True, send_debug=Fal
                 msg = MIMEMultipart()
                 msg['From'] = mail_id
                 msg['To'] = debug_mail
-                msg['Subject'] = "subject"
+                msg['Subject'] = subject
 
-                body = f"Seus certificados {row['nome']}:"
+                body = custom_message(message, {
+                    "<pname>": row['nome'],
+                })
 
                 attachments_paths = row['attachments_paths']
 
@@ -75,7 +96,7 @@ def send_mail(df_data: pd.DataFrame, module_name:str, debug=True, send_debug=Fal
                 df_data.loc[index, module_name] = True
                 print(f"Enviado com sucesso a {row['nome']} {row['email']}")
             except Exception as e:
-                print(f"erro ao enviar para {row['nome']}.", e)
+                print(f"Erro ao enviar para {row['nome']}.", e)
 
 def get_df_data(file_path: str, module_name: str):
 
