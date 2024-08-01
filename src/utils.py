@@ -64,10 +64,14 @@ def send_mail(df_data: pd.DataFrame, module_name:str, message: str, subject:str,
                     print(f"Ignorando {row['nome']}. Não possui arquivos a serem enviados.")
                     continue
 
+                to_mail = row['email']
+                if send_debug:
+                    to_mail = debug_mail
+
                 # Create the email message
                 msg = MIMEMultipart()
                 msg['From'] = mail_id
-                msg['To'] = debug_mail
+                msg['To'] = to_mail
                 msg['Subject'] = subject
 
                 body = custom_message(message, {
@@ -92,11 +96,14 @@ def send_mail(df_data: pd.DataFrame, module_name:str, message: str, subject:str,
                         s.sendmail(from_addr=mail_id, to_addrs=debug_mail, msg=msg.as_string())
                         debug_send_count += 1
                 else:
-                    s.sendmail(from_addr=mail_id, to_addrs=row['email'], msg=msg.as_string())
+                    # s.sendmail(from_addr=mail_id, to_addrs=row['email'], msg=msg.as_string())
+                    pass
                 df_data.loc[index, module_name] = True
                 print(f"Enviado com sucesso a {row['nome']} {row['email']}")
             except Exception as e:
                 print(f"Erro ao enviar para {row['nome']}.", e)
+
+    print("Enviar emails terminou.")
 
 def get_df_data(file_path: str, module_name: str):
 

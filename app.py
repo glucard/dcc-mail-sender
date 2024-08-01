@@ -1,4 +1,7 @@
 from src.utils import get_df_data, send_mail, add_attachments
+from src.gui import FileSelectorWindow
+
+import tkinter as tk
 
 def debug():
     df_data = get_df_data("debug_data\CERTIFICADOS.xlsx", "ds_3")
@@ -8,5 +11,10 @@ def debug():
     df_data.to_excel("debug_data\output_datetime.xlsx", index=False)
     print(df_data)
 
+def debug_gui():
+    root = tk.Tk()
+    app = FileSelectorWindow(root)
+    root.mainloop()
+    
 if __name__ == "__main__":
-    debug()
+    debug_gui()
