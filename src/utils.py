@@ -8,6 +8,8 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.application import MIMEApplication
 from email import encoders
 
+from src.custom_exceptions import PessoaNaoEncontrada
+
 # load env
 import os
 from dotenv import load_dotenv
@@ -146,10 +148,19 @@ def add_attachments(df_data: pd.DataFrame, attachments_folder_path:str):
 
     for fn in file_names:
         fn_extracted_name = fn.lower()[:-11]
-        p_file_index = df_data[df_data["nome"].apply(lambda x: x.lower()) == fn_extracted_name].index[0]
+        print(df_data[df_data["nome"].apply(lambda x: x.lower()) == fn_extracted_name].index)
+        try:
+            p_file_index = df_data[df_data["nome"].apply(lambda x: x.lower()) == fn_extracted_name].index[0]
+        except IndexError:
+            raise PessoaNaoEncontrada(f"{fn_extracted_name} não foi encontrada na base de dados. Nome do original do arquivo: {fn}")
+
+            
+
         # assert isinstance(p_file_index, int), "p_file_indexd deve ser um int."
         df_data.loc[p_file_index, 'attachments_paths'] += "|" if df_data.loc[p_file_index, 'attachments_paths'] != "" else ""
         df_data.loc[p_file_index, 'attachments_paths'] +=  os.path.join(attachments_folder_path, fn)
         #print(fn_extracted_name, p_file_index)
+
+    return True
 
 # codigo dedicado a minha namorada linda e bonita <3

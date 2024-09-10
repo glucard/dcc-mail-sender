@@ -4,6 +4,7 @@ import pandas as pd
 import threading
 
 from src.utils import get_df_data, send_mail, add_attachments
+from src.custom_exceptions import ThreadWithException
 
 class FileSelectorWindow:
     def __init__(self, root):
@@ -57,35 +58,11 @@ class FileSelectorWindow:
         else:
             messagebox.showwarning("Input Error", "Please select a file!")
 
-class AttachmentsFolderSelectorWindow:
-    def __init__(self, data):
-        self.root = tk.Tk()
-        self.root.title("DCC Mail Sender - Main Window")
-
-        self.data = data
-
-        self.label = tk.Label(self.root, text="Email Sender")
-        self.label.pack(pady=10)
-
-        self.to_entry = tk.Entry(self.root, width=50)
-        self.to_entry.pack(pady=5)
-
-        self.subject_entry = tk.Entry(self.root, width=50)
-        self.subject_entry.pack(pady=5)
-
-        self.message_text = tk.Text(self.root, width=50, height=10)
-        self.message_text.pack(pady=5)
-
-        self.send_button = tk.Button(self.root, text="Send", command=self.send_email)
-        self.send_button.pack(pady=20)
-
-        self.root.mainloop()
-
-
 class MainWindow:
     def __init__(self, data, module_name):
         self.root = tk.Tk()
         self.root.title("DCC Mail Sender - Main Window")
+        self.root.attributes('-fullscreen',True)
 
         self.data = data
         self.module_name = module_name
@@ -96,10 +73,11 @@ class MainWindow:
         self.frame = tk.Frame(self.root)
         self.frame.pack(pady=10)
 
-        self.tree = ttk.Treeview(self.frame, columns=list(data.columns), show='headings')
-        for col in data.columns:
+        self.acceptable_columns = ['nome', 'email', 'attachments_paths']
+        self.tree = ttk.Treeview(self.frame, columns=list(self.acceptable_columns), show='headings')
+        for col in self.acceptable_columns:
             self.tree.heading(col, text=col)
-            self.tree.column(col, width=100)
+            self.tree.column(col, width=256)
 
         self.update_tree()
 
@@ -125,6 +103,14 @@ class MainWindow:
         self.send_button = tk.Button(self.root, text="Send", command=self.send_email)
         self.send_button.pack(pady=20)
 
+        self.check_debug = tk.IntVar(value=1) 
+        self.check_debug_button = tk.Checkbutton(self.root, text = "Debug Mode", 
+                    variable = self.check_debug, 
+                    onvalue = 1, 
+                    offvalue = 0, 
+                    height = 2)
+        self.check_debug_button.pack()
+
         self.root.mainloop()
     
     def clear_tree(self):
@@ -133,36 +119,43 @@ class MainWindow:
 
     def update_tree(self):
         self.clear_tree()
-        for index, row in self.data.iterrows():
+        temp_data = self.data[self.acceptable_columns].copy()
+        for index, row in temp_data.iterrows():
             self.tree.insert("", tk.END, values=list(row))
 
     def add_attachments(self):
-        folder_path = filedialog.askdirectory()
-        if folder_path:
-            add_attachments(df_data=self.data, attachments_folder_path=folder_path)
-        self.update_tree()
+        try:
+            folder_path = filedialog.askdirectory()
+            if folder_path:
+                add_attachments(df_data=self.data, attachments_folder_path=folder_path)
+            self.update_tree()
+        except Exception as e:
+            messagebox.showerror("Erro", e)
+            self.root.destroy()
             
 
     def send_email(self):
         subject = self.subject_entry.get()
         message = self.message_text.get("1.0", tk.END)
+        checkbox_debug = True if self.check_debug.get() == 1 else False
 
         if subject and message:
             # Here you would call the existing email sending function
             try:
-                send_email_function(subject, message, data=self.data, module_name=self.module_name)  # Replace with your actual function
+                send_email_function(subject, message, checkbox_debug, data=self.data, module_name=self.module_name)  # Replace with your actual function
                 messagebox.showinfo("Success", "Email sent successfully!")
             except Exception as e:
                 messagebox.showerror("Error", str(e))
         else:
             messagebox.showwarning("Input Error", "All fields are required!")
 
-def send_email_function(subject, message, data:pd.DataFrame, module_name:str):
+def send_email_function(subject, message,checkbox_debug, data:pd.DataFrame, module_name:str):
     # This is a placeholder for your actual email sending logic
     print(f"Subject: {subject}")
     print(f"Message: {message}")
+    print(f"Debug Mode {checkbox_debug}")
 
-    send_thread = threading.Thread(target=send_mail,args=(data, module_name, message, subject, True, True, 5), daemon=True)
+    send_thread = ThreadWithException(target=send_mail,args=(data, module_name, message, subject, checkbox_debug, checkbox_debug, 2), daemon=True)
     send_thread.start()
     #send_thread.join()
     # send_mail(df_data=data, module_name=module_name, message=message, subject=subject, debug=True)

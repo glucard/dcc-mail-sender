@@ -14,7 +14,10 @@ def debug():
 def debug_gui():
     root = tk.Tk()
     app = FileSelectorWindow(root)
+    root.attributes('-fullscreen',True)
     root.mainloop()
     
 if __name__ == "__main__":
     debug_gui()
+
+    
