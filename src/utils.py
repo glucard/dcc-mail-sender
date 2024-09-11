@@ -98,7 +98,7 @@ def send_mail(df_data: pd.DataFrame, module_name:str, message: str, subject:str,
                         s.sendmail(from_addr=mail_id, to_addrs=debug_mail, msg=msg.as_string())
                         debug_send_count += 1
                 else:
-                    # s.sendmail(from_addr=mail_id, to_addrs=row['email'], msg=msg.as_string())
+                    s.sendmail(from_addr=mail_id, to_addrs=row['email'], msg=msg.as_string())
                     pass
                 df_data.loc[index, module_name] = True
                 print(f"Enviado com sucesso a {row['nome']} {row['email']}")
@@ -145,14 +145,16 @@ def add_attachments(df_data: pd.DataFrame, attachments_folder_path:str):
     assert os.path.isdir(attachments_folder_path), f"'{attachments_folder_path}' é um caminho invalido."
 
     file_names = os.listdir(attachments_folder_path)
-
+    not_found_persons = []
     for fn in file_names:
         fn_extracted_name = fn.lower()[:-11]
         print(df_data[df_data["nome"].apply(lambda x: x.lower()) == fn_extracted_name].index)
         try:
             p_file_index = df_data[df_data["nome"].apply(lambda x: x.lower()) == fn_extracted_name].index[0]
         except IndexError:
-            raise PessoaNaoEncontrada(f"{fn_extracted_name} não foi encontrada na base de dados. Nome do original do arquivo: {fn}")
+            not_found_persons.append((fn_extracted_name, fn))
+            continue
+
 
             
 
@@ -160,6 +162,13 @@ def add_attachments(df_data: pd.DataFrame, attachments_folder_path:str):
         df_data.loc[p_file_index, 'attachments_paths'] += "|" if df_data.loc[p_file_index, 'attachments_paths'] != "" else ""
         df_data.loc[p_file_index, 'attachments_paths'] +=  os.path.join(attachments_folder_path, fn)
         #print(fn_extracted_name, p_file_index)
+    
+    if not_found_persons:
+        raise PessoaNaoEncontrada(f"As seguintes pessoas não foram encontradas na base de dados\n"+
+                                  f"Nome extraido do arquivo, nome original do arquivo\n"+
+                                  '\n'.join([f"{name}, {fn}" for name, fn in not_found_persons])
+                                  )
+        raise PessoaNaoEncontrada(f"{fn_extracted_name} não foi encontrada na base de dados. Nome do original do arquivo: {fn}")
 
     return True
 
