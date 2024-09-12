@@ -15,11 +15,22 @@ import os
 from dotenv import load_dotenv
 load_dotenv()
 
-def custom_message(message:str, tags_replaces:dict):
+def custom_message(message:str, tags_replaces:dict)-> str:
     """
-    message: string com messagem contendo tags. Examplo de tag: <name>
-    tags_replaces: dicionario com keys como tags e valores como valores que irão substituir as tags. Examplo {"<name>": "Lucas"}
-    assert isinstance(message, str)
+    Recebe uma string com um dicionario e substitui as chaves no dicionario na string pelos valores.
+
+    Args:
+        message: string com messagem contendo tags.
+        tags_replaces: dicionario com keys como tags e valores como valores que irão substituir as tags.
+
+    Returns:
+        a string com tags substuidas pelos valores.
+
+    Examples:
+        >>> mensagem = "Olá, <pname>!"
+        >>> tags_replaces = {"<pname>":"Lucas"}
+        >>> custom_message(message=mensagem, tags_replaces=tags_replaces)
+        "Olá, Lucas!"
     """
     assert isinstance(message, str), "Mensagem deve ser uma string."
     assert isinstance(tags_replaces, dict), "tags_replaces deve ser um dicionario."
@@ -31,7 +42,31 @@ def custom_message(message:str, tags_replaces:dict):
     
 
 def send_mail(df_data: pd.DataFrame, module_name:str, message: str, subject:str, debug=True, send_debug=False, max_debug_count_send:int=1):
+    """
+    Envia emails a partir de um dataframe.
 
+    Args:
+        df_data: pd.DataFrame contendo as colunas = ["nome", "email", "attachments_paths"]
+        module_name: str pode deixar uma string vazia, ex: ' '. (a ser implementado para salvar estado da execução com os emails que ja foram enviados para determinada pessoa).
+        message: str da mensagem a ser enviada. Pode conter tag "\<pname\>" para ser substituido pelo valor na coluna "nome" de df_data.
+        subject: str contendo o titulo do email a ser enviado.
+        debug: bool. Se `True`envia email ao email em DEBUG_MAIL. Caso `False` envia para o email na coluna "email" de df_data.
+        send_debug: bool. 
+        max_debug_count_send: int com a quantidade de emails que serão enviados caso `send_debug=True`.
+
+
+    Examples:
+        >>> df_data = pd.DataFrame({
+        >>>     nome:["George", "Lucas"],
+        >>>     email=["george@example.com","lucas@example.com"],
+        >>>     "attachments_paths":["path/to/george.pdf", "path/to/lucas.pdf"]
+        >>> })
+        >>> module_name = " "
+        >>> message = "Parabéns, <pname>. Você passou no curso. Segue seus certificados em anexo."
+        >>> subject = "Certificados do Curso"
+        >>> debug = False
+        >>> send_mail(df_data=df_data, module_name=module_name, message=message, subject=subject, debug=debug)
+    """
     mail_id = os.getenv('MAIL_ID')
     mail_password = os.getenv('MAIL_APP_PASSWORD')
 
@@ -107,11 +142,21 @@ def send_mail(df_data: pd.DataFrame, module_name:str, message: str, subject:str,
 
     print("Enviar emails terminou.")
 
-def get_df_data(file_path: str, module_name: str):
-
+def get_df_data(file_path: str, module_name: str) -> pd.DataFrame:
     """
-    file_path: local do arquivo com extensão
-    module_name: nome do curso/modulo atual dos certificados a serem enviados
+    Abre um arquivo em .xlsx (planilha do excel) e converte para DataFrame.
+
+    Args:
+        file_path: local do arquivo .xlsx (planilha do excel) contendo as colunas = ["nome", "email"] (com já valores preenchidos).
+        module_name: nome do curso/modulo atual dos certificados a serem enviados.
+    
+    Returns:
+        data_df: pd.DataFrame que contém as informações do arquivo .xlsx
+    
+    Examples:
+    >>> file_path = "path/to/planilha.xlsx"
+    >>> module_name = "curso extensão modulo II"
+    >>> df = get_df_data(file_path=file_path, module_name=module_name)
     """
 
     assert isinstance(file_path, str)
@@ -139,6 +184,16 @@ def get_df_data(file_path: str, module_name: str):
     return df_data
 
 def add_attachments(df_data: pd.DataFrame, attachments_folder_path:str):
+    """
+    Adiciona anexos ao DataFrame contendo as colunas = ["nome", "email"] adicionando uma coluna "attachments_paths".
+
+    Args:
+        df_data: pd.DataFrame contendo as colunas = ["nome", "email"].
+        attachments_folder_path: str contendo o diretorio até a pasta com os arquivos a serem anexados.
+
+    Returns
+
+    """
     
     assert isinstance(df_data, pd.DataFrame), "df_data deve ser um objeto DataFrame de pandas."
     assert isinstance(attachments_folder_path, str), "attachments_folder_path deve ser uma string"
