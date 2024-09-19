@@ -41,6 +41,7 @@
 
     ```bash
     cd dcc-email-sender
+    pip install -r requirements.txt
     python3 app.py
     ```
 
