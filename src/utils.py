@@ -183,7 +183,7 @@ def get_df_data(file_path: str, module_name: str) -> pd.DataFrame:
 
     return df_data
 
-def add_attachments(df_data: pd.DataFrame, attachments_folder_path:str):
+def add_attachments(df_data: pd.DataFrame, attachments_folder_path:str) -> None:
     """
     Adiciona anexos ao DataFrame contendo as colunas = ["nome", "email"] adicionando uma coluna "attachments_paths".
 
@@ -192,7 +192,17 @@ def add_attachments(df_data: pd.DataFrame, attachments_folder_path:str):
         attachments_folder_path: str contendo o diretorio até a pasta com os arquivos a serem anexados.
 
     Returns
+        None
 
+        
+    >>> df_data = pd.DataFrame({
+    >>>     nome:["George", "Lucas"],
+    >>>     email=["george@example.com","lucas@example.com"]
+    >>> })
+    >>> attachments_folder_path = "path/to/attachments/folder"
+    >>> add_attachments(df_data=df_data, attachments_folder_path=attachments_folder_path)
+    >>> df_data['attachments_paths']
+    ['path/to/attachments/folder/george.pdf', 'path/to/attachments/folder/lucas.pdf']
     """
     
     assert isinstance(df_data, pd.DataFrame), "df_data deve ser um objeto DataFrame de pandas."

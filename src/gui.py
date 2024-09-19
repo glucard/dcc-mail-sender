@@ -6,8 +6,17 @@ import threading
 from src.utils import get_df_data, send_mail, add_attachments
 from src.custom_exceptions import ThreadWithException
 
+"""
+Este codigo é para uma interface simples para usar as funções no `utils.py` utilizando Tkinter.
+É valido melhorar ou mudar a para outra interface.
+"""
+
 class FileSelectorWindow:
     def __init__(self, root):
+        """
+        esta classe cria uma janela para selecionar o arquivo .xlsx
+        """
+
         self.root = root
         self.root.title("DCC Mail Sender - File Selector")
 
@@ -33,9 +42,15 @@ class FileSelectorWindow:
         self.filepath = ""
 
     def retrieve_module_input(self):
+        """
+        retorna o o valor entrado como caminho quando selecionado na interface.
+        """
         return self.module_input.get()
 
     def browse_file(self):
+        """
+        abre a caixa de dialogo para selecionar o arquivo .xlsx
+        """
         self.filepath = filedialog.askopenfilename(
             filetypes=[("Excel files", "*.xlsx"), ("All files", "*.*")]
         )
@@ -43,6 +58,10 @@ class FileSelectorWindow:
             self.file_label.config(text=f"Selected file: {self.filepath}")
 
     def open_main_window(self):
+        """
+        após selecionado e confimardo o arquivo .xlsx este trecho de codigo passará a interface para uma proxima janela
+        contendo a seleção dos attachments
+        """
         if self.filepath:
             try:
                 module_name = self.retrieve_module_input()
@@ -60,6 +79,9 @@ class FileSelectorWindow:
 
 class MainWindow:
     def __init__(self, data, module_name):
+        """
+        cria ma janela para visualizar o arquivo .xlsx com nome, email e attachments.
+        """
         self.root = tk.Tk()
         self.root.title("DCC Mail Sender - Main Window")
         self.root.attributes('-fullscreen',True)
@@ -114,16 +136,26 @@ class MainWindow:
         self.root.mainloop()
     
     def clear_tree(self):
+        """
+        limpa a tabela onde está localizando as informações do .xslx
+        """
         for item in self.tree.get_children():
             self.tree.delete(item)
 
     def update_tree(self):
+        
+        """
+        atualiza a tabela onde está localizando as informações do .xslx
+        """
         self.clear_tree()
         temp_data = self.data[self.acceptable_columns].copy()
         for index, row in temp_data.iterrows():
             self.tree.insert("", tk.END, values=list(row))
 
     def add_attachments(self):
+        """
+        abre um dialogo para selecionar a pasta com os presentes attachments para cada linha no .xlsx
+        """
         try:
             folder_path = filedialog.askdirectory()
             if folder_path:
@@ -135,6 +167,10 @@ class MainWindow:
             
 
     def send_email(self):
+        
+        """
+        inicia a execução dos envios dos emails com respectivos anexos.
+        """
         subject = self.subject_entry.get()
         message = self.message_text.get("1.0", tk.END)
         checkbox_debug = True if self.check_debug.get() == 1 else False
@@ -150,6 +186,9 @@ class MainWindow:
             messagebox.showwarning("Input Error", "All fields are required!")
 
 def send_email_function(subject, message,checkbox_debug, data:pd.DataFrame, module_name:str):
+    """
+    chama a função de envio dos emails do `utils.py`.
+    """
     # This is a placeholder for your actual email sending logic
     print(f"Subject: {subject}")
     print(f"Message: {message}")
@@ -159,8 +198,3 @@ def send_email_function(subject, message,checkbox_debug, data:pd.DataFrame, modu
     send_thread.start()
     #send_thread.join()
     # send_mail(df_data=data, module_name=module_name, message=message, subject=subject, debug=True)
-
-if __name__ == "__main__":
-    root = tk.Tk()
-    app = FileSelectorWindow(root)
-    root.mainloop()
