@@ -48,7 +48,7 @@ def send_mail(df_data: pd.DataFrame, module_name:str, message: str, subject:str,
     Args:
         df_data: pd.DataFrame contendo as colunas = ["nome", "email", "attachments_paths"]
         module_name: str pode deixar uma string vazia, ex: ' '. (a ser implementado para salvar estado da execução com os emails que ja foram enviados para determinada pessoa).
-        message: str da mensagem a ser enviada. Pode conter tag "\<pname\>" para ser substituido pelo valor na coluna "nome" de df_data.
+        message: str da mensagem a ser enviada. Pode conter tag "<pname>" para ser substituido pelo valor na coluna "nome" de df_data.
         subject: str contendo o titulo do email a ser enviado.
         debug: bool. Se `True`envia email ao email em DEBUG_MAIL. Caso `False` envia para o email na coluna "email" de df_data.
         send_debug: bool. 
@@ -169,6 +169,7 @@ def get_df_data(file_path: str, module_name: str) -> pd.DataFrame:
     }
 
     df_data = read_funcs[file_extension](file_path)
+    df_data.columns = df_data.columns.map(lambda x: x.lower())
 
     df_columns = df_data.columns
 
