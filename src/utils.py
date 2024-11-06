@@ -213,7 +213,7 @@ def add_attachments(df_data: pd.DataFrame, attachments_folder_path:str) -> None:
     file_names = os.listdir(attachments_folder_path)
     not_found_persons = []
     for fn in file_names:
-        fn_extracted_name = fn.lower()[:-11]
+        fn_extracted_name = fn.lower().split(".")[0]
         print(df_data[df_data["nome"].apply(lambda x: x.lower()) == fn_extracted_name].index)
         try:
             p_file_index = df_data[df_data["nome"].apply(lambda x: x.lower()) == fn_extracted_name].index[0]
